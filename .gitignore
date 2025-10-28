@@ -1,0 +1,181 @@
+.idea
+.idea/
+# C++ project .gitignore
+# Tailored for CMake, common IDEs (CLion, VSCode, Visual Studio, Xcode), package managers (conan, vcpkg),
+# build artifacts, binaries, object files, and OS-specific files.
+
+##########################
+# General / OS files
+##########################
+# macOS
+.DS_Store
+# Thumbnails
+Thumbs.db
+
+##########################
+# Build directories
+##########################
+# Common build dirs
+build/
+bin/
+lib/
+out/
+_build/
+cmake-build-*/
+cmake_install.cmake
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+
+# Meson
+meson-*/
+
+# Bazel
+bazel-*/
+
+##########################
+# C/C++ generated/compiler files
+##########################
+*.o
+*.ko
+*.obj
+*.elf
+*.gch
+*.pch
+*.pdb
+*.idb
+*.class
+*.slo
+*.lo
+*.la
+*.al
+
+# Static / dynamic libraries and executables
+*.so
+*.so.*
+*.dylib
+*.a
+*.lib
+*.dll
+*.exe
+*.out
+*.app
+
+# Linker files
+link.txt
+
+##########################
+# Coverage / profiling
+##########################
+coverage/
+*.gcno
+*.gcda
+*.gcov
+*.lcov
+coverage.info
+
+##########################
+# Editor / IDE directories
+##########################
+# VS Code
+.vscode/
+
+# JetBrains (CLion, IntelliJ)
+.idea/
+*.iml
+
+# Visual Studio
+*.vcxproj.user
+*.suo
+*.user
+*.vcxproj.*.user
+*.VC.db
+ipch/
+*.VC.opendb
+
+# Xcode
+*.xcworkspace
+*.xcuserdata/
+*.xcodeproj/
+DerivedData/
+*.xcuserstate
+
+# Qt Creator
+*.pro.user
+*.qmake.stash
+
+##########################
+# Build system files
+##########################
+# CMake
+CMakeLists.txt.user
+
+# Makefiles / Ninja
+Makefile
+Makefile*~
+build.ninja
+
+##########################
+# Package managers / dependency caches
+##########################
+# Conan
+conanbuildinfo.txt
+conaninfo.txt
+conan.lock
+conanbuildinfo*.py
+conan_package.tgz
+conan_export.tgz
+conan_data/
+
+# vcpkg
+installed/
+buildtrees/
+packages/
+downloads/
+vcpkg_installed/
+
+# Other dependency caches
+deps/
+third_party/
+
+##########################
+# Test / CI artifacts
+##########################
+test-results/
+tests/coverage/
+*.tap
+*.trx
+
+##########################
+# Logs and temporary files
+##########################
+*.log
+*.tmp
+*.temp
+*.swp
+*.swo
+
+##########################
+# Tooling and caches
+##########################
+# ccache
+.ccache/
+
+# compiler explorer or other local caches
+*.cache
+
+##########################
+# Misc
+##########################
+# Environment files
+.env
+.env.local
+
+# Lockfiles that are often generated locally
+*.lock
+
+# Ansible / deployment
+vault.key
+
+# End of file
+
