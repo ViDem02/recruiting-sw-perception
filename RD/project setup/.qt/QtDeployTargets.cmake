@@ -1,0 +1,4 @@
+set(__QT_DEPLOY_TARGET_pcd_write_test_FILE /Users/vi/Documents/Projects/PerceptionRecruitment/RD/project setup/pcd_write_test)
+set(__QT_DEPLOY_TARGET_pcd_write_test_TYPE EXECUTABLE)
+set(__QT_DEPLOY_TARGET_perception_FILE /Users/vi/Documents/Projects/PerceptionRecruitment/RD/project setup/perception)
+set(__QT_DEPLOY_TARGET_perception_TYPE EXECUTABLE)

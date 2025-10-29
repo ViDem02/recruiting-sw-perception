@@ -9,7 +9,9 @@ public:
     int year{};
 };
 
-int main() {
+int
+main()
+{
     // Create an object of Car
     Car carObj1;
     carObj1.brand = "BMW";
