@@ -1,5 +1,7 @@
 # Diary
 
+project link: https://github.com/users/ViDem02/projects/7
+
 ## First phases
 
 I will now parse the requirements. 
@@ -94,4 +96,9 @@ https://hackernoon.com/lidar-basics-the-coordinate-system-a26529615df9
 
 
 ![coordinates system](<imgs/Capture d’écran 2025-10-28 à 18.08.17.png>)
+
+
+## Progress
+
+Created second project. Worked out structure and workflow.
 
