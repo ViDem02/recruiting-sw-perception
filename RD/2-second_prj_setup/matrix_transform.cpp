@@ -73,7 +73,6 @@ main(const int argc, char **argv)
 
     // Rotation
     Eigen::Affine3f transform_2 = Eigen::Affine3f::Identity();
-
     transform_2.translation() << 0.0, 0.0, 0.0;
     transform_2.rotate(Eigen::AngleAxisf(-M_PI/2, Eigen::Vector3f::UnitX()));
     transform_2.rotate(Eigen::AngleAxisf(M_PI/2, Eigen::Vector3f::UnitZ()));
@@ -86,21 +85,24 @@ main(const int argc, char **argv)
     pcl::PointCloud<pcl::PointXYZ>::Ptr transformed_cloud(new pcl::PointCloud<pcl::PointXYZ>());
     pcl::transformPointCloud(*source_cloud, *transformed_cloud, transform_2);
 
-
     pcl::visualization::PCLVisualizer viewer("Matrix transformation example");
+
 
     const pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> transformed_cloud_color_handler(
         transformed_cloud, 230, 20, 20); // Red
-
-
     viewer.addPointCloud(transformed_cloud, transformed_cloud_color_handler, "transformed_cloud");
+
+    const pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> source_cloud_color_handler(
+        source_cloud, 255, 255, 255); // Red
+    viewer.addPointCloud(source_cloud, source_cloud_color_handler, "source_cloud");
 
 
     viewer.addCoordinateSystem(1.0, "cloud", 0);
     viewer.setBackgroundColor(0.05, 0.05, 0.05, 0);
-    viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 1, "transformed_cloud");
+    viewer.setPointCloudRenderingProperties(pcl::visualization::PCL_VISUALIZER_POINT_SIZE,
+        1, "transformed_cloud");
     viewer.setPosition(0, 0);
-    //viewer.initCameraParameters();
+
 
     while (!viewer.wasStopped())
     {
