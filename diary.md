@@ -102,3 +102,9 @@ https://hackernoon.com/lidar-basics-the-coordinate-system-a26529615df9
 
 Created second project. Worked out structure and workflow.
 
+### How to structure a project 
+Seen https://www.youtube.com/watch?v=HXd7g3RlCIs&list=PLS_iNJJVTtiRV0DZRDcTHnvAuDrKGPN40&index=6
+
+Seen https://learn.microsoft.com/en-us/cpp/cpp/header-files-cpp?view=msvc-170
+Seen https://learn.microsoft.com/en-us/cpp/cpp/modules-cpp?view=msvc-170
+
