@@ -13,22 +13,9 @@
 
 #include <pcl/console/parse.h>
 #include <pcl/point_cloud.h> // for PointCloud
-#include <pcl/common/io.h> // for copyPointCloud
-#include <pcl/sample_consensus/ransac.h>
 #include <pcl/visualization/pcl_visualizer.h>
 
-
-struct color {
-    int red;
-    int green;
-    int blue;
-};
-
-
-
-int safe_index(const int n, const int max) {
-    return (n - 1) % max + 1;
-}
+#include "ColorUtilities.h"
 
 
 int
@@ -93,12 +80,7 @@ main()
 
     pcl::visualization::PCLVisualizer viewer("Matrix transformation example");
 
-    color colors[3];
-
-    colors[0] = {255, 0, 0};
-    colors[1] = {0, 255, 0};
-    colors[2] = {255, 0, 255};
-
+    ColorUtilities color_utilities;
 
     int nr_iterations = 0;
     int nr_points = (int) cloud_filtered->size();
@@ -129,17 +111,18 @@ main()
         std::cerr << "PointCloud representing the planar component: " << cloud_p->width * cloud_p->height <<
                 " data points." << std::endl;
 
-        int colors_index;
-        colors_index = safe_index(nr_iterations, sizeof(colors));
-        colors_index = 0;
 
         pcl::transformPointCloud(*cloud_p, *cloud_p, transform_2);
 
+
+        int colors_index = 0;
+        ColorUtilities::color color = color_utilities.getColor(colors_index);
+
         pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler(
             cloud_p,
-            colors[colors_index].red,
-            colors[colors_index].green,
-            colors[colors_index].blue);
+            color.red,
+            color.green,
+            color.blue);
 
         //viewer.addPointCloud(cloud_p, handler, std::to_string(nr_iterations));
 
@@ -165,17 +148,16 @@ main()
         nr_iterations++;
     }
 
-    int colors_index;
-    colors_index = safe_index(nr_iterations, sizeof(colors));
-    colors_index = 2;
+    int colors_index = 2;
+    ColorUtilities::color color = color_utilities.getColor(colors_index);
 
     pcl::transformPointCloud(*cloud_filtered, *cloud_p, transform_2);
 
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler(
         cloud_p,
-        colors[colors_index].red,
-        colors[colors_index].green,
-        colors[colors_index].blue);
+        color.red,
+        color.green,
+        color.blue);
 
     viewer.addPointCloud(cloud_p, handler, std::to_string(nr_iterations));
 
@@ -183,14 +165,15 @@ main()
 
 
     colors_index = 1;
+    color = color_utilities.getColor(colors_index);
 
     pcl::transformPointCloud(*cloud_not_filtered, *cloud_not_filtered, transform_2);
 
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler2(
             cloud_not_filtered,
-            colors[colors_index].red,
-            colors[colors_index].green,
-            colors[colors_index].blue);
+            color.red,
+            color.green,
+            color.blue);
 
     //viewer.addPointCloud(cloud_not_filtered, handler2, std::to_string(nr_iterations));
 

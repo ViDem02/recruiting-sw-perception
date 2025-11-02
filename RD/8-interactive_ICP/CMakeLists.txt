@@ -4,8 +4,7 @@ project(second_prj_setup)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(PCL 1.3 REQUIRED)
-add_executable(pcd_write_test  main.cpp
-        ColorUtilities.h)
+add_executable(pcd_write_test main.cpp other_code.cpp)
 target_link_libraries(pcd_write_test ${PCL_LIBRARIES})
 
 # add_executable(second_prj_setup matrix_transform.cpp)
