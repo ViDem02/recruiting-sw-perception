@@ -1,6 +1,8 @@
 #include <iostream>
 #include <thread>
 #include <vector>
+
+
 #include <pcl/point_types.h>
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
@@ -11,31 +13,14 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/filters/filter_indices.h>
 #include <pcl/segmentation/region_growing.h>
-
-
-#include <iostream>
-#include <thread>
-
 #include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/common/transforms.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/extract_indices.h>
-
 #include <pcl/console/parse.h>
-#include <pcl/point_cloud.h> // for PointCloud
-#include <pcl/common/io.h> // for copyPointCloud
-#include <pcl/sample_consensus/ransac.h>
-#include <pcl/visualization/pcl_visualizer.h>
-
-
-#include <iostream>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/common/io.h>
 #include <pcl/filters/statistical_outlier_removal.h>
 
 int
@@ -334,7 +319,7 @@ main()
 
 
 
-    /*
+
     extract.setInputCloud(desired_object_cloud);
     for (int i = 0; i < clusters.size(); i++)
     {
@@ -343,7 +328,7 @@ main()
         extract.setNegative(true);
         extract.setKeepOrganized(true);
         extract.filter(*desired_object_cloud);
-    }*/
+    }
 
 
 
@@ -365,7 +350,7 @@ main()
     pcl::transformPointCloud(*desired_object_cloud, *desired_object_cloud, transform);
     pcl::transformPointCloud(*cloud, *cloud, transform);
 
-    //viewer.addPointCloud(colored_cloud, "segcloud");
+    viewer.addPointCloud(colored_cloud, "segcloud");
 
     viewer.addPointCloud(desired_object_cloud, "cloud");
 
