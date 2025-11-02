@@ -15,13 +15,10 @@ public:
         int blue;
     };
 
-    color colors[3]{};
-
-    ColorUtilities() {     // Constructor
-        colors[0] = {255, 0, 0};
-        colors[1] = {0, 255, 0};
-        colors[2] = {255, 0, 255};
-    }
+    color colors [2] = {
+        {255, 0, 0},
+        {0, 255, 0}
+    };
 
     [[nodiscard]] color getColor(const int index) const
     {
