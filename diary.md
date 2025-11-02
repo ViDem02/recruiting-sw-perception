@@ -108,3 +108,12 @@ Seen https://www.youtube.com/watch?v=HXd7g3RlCIs&list=PLS_iNJJVTtiRV0DZRDcTHnvAu
 Seen https://learn.microsoft.com/en-us/cpp/cpp/header-files-cpp?view=msvc-170
 Seen https://learn.microsoft.com/en-us/cpp/cpp/modules-cpp?view=msvc-170
 
+
+# Saturday progress
+
+Done some experimentation on filtering and working 
+with point clouds.
+
+# Sunday plan
+
+Work with 

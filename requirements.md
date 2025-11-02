@@ -37,8 +37,6 @@ STEPS: Display the raw data using **OpenCV** or visualize the point cloud using 
 GOAL: Extract points corresponding to objects in the scan. and classify them as either cones or obstacles on the track.
 STEPS: Use clustering and classification algorithms (e.g., **K-Means**, **DBSCAN**) to detect from the point cloud.
 
----
-
 ### L3 Object Classification
 GOAL: Classify the objects obtained previously as either cones or general obstacles.
 STEPS: Use point cloud geometry fitting such as **RANSAC** to determine the shape, or perform **ICP** using an ideal cone model to infer its shape.

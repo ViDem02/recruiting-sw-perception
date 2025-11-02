@@ -1,5 +1,7 @@
 .idea
 .idea/
+.venv/
+
 # C++ project .gitignore
 # Tailored for CMake, common IDEs (CLion, VSCode, Visual Studio, Xcode), package managers (conan, vcpkg),
 # build artifacts, binaries, object files, and OS-specific files.
