@@ -4,6 +4,7 @@
 
 
 #include <pcl/point_types.h>
+#include <pcl/segmentation/segment_differences.h>
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/search/search.h>
@@ -371,44 +372,51 @@ get_rotation_matrix()
 }
 
 
-
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 get_cones_cloud(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr &src_cloud,
     const float cut_bottom = -10.0,
-    const float cut_top = -0.2
-    )
+    const float cut_top = -0.2,
+    std::string cone_model_name = "cone_surface_only.ply",
+    bool visualize_cone_detection = false
+)
 {
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr result_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+    // TODO : edit the algorithm so that only one variable is created
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cones_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr dst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::copyPointCloud(*src_cloud, *dst_cloud);
 
     pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setInputCloud(cloud);
+    pass.setInputCloud(dst_cloud);
     pass.setFilterFieldName("y");
     pass.setFilterLimits(cut_bottom, cut_top);
-    pass.filter(*cloud);
+    pass.filter(*dst_cloud);
 
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    sor.setInputCloud(cloud);
+    sor.setInputCloud(dst_cloud);
     sor.setMeanK(50);
     sor.setStddevMulThresh(0.8);
-    sor.filter(*cloud);
+    sor.filter(*dst_cloud);
 
+
+    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
     pcl::ExtractIndices<pcl::PointXYZ> reg_grow_extract;
     pcl::search::Search<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
     pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
     pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
     pcl::IndicesPtr indices(new std::vector<int>);
-    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
     std::vector<pcl::PointIndices> clusters;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
 
-
-    pcl::removeNaNFromPointCloud(*cloud, *indices);
+    pcl::removeNaNFromPointCloud(*dst_cloud, *indices);
     normal_estimator.setSearchMethod(tree);
-    normal_estimator.setInputCloud(cloud);
+    normal_estimator.setInputCloud(dst_cloud);
     normal_estimator.setKSearch(50);
     normal_estimator.compute(*normals);
-    reg.setInputCloud(cloud);
+    reg.setInputCloud(dst_cloud);
     reg.setMinClusterSize(500);
     reg.setMaxClusterSize(10000000);
     reg.setSearchMethod(tree);
@@ -417,24 +425,129 @@ get_cones_cloud(
     reg.setInputNormals(normals);
     reg.setSmoothnessThreshold(1 / 180.0 * M_PI);
     reg.setCurvatureThreshold(1);
-
     reg.extract(clusters);
-
-    reg_grow_extract.setInputCloud(cloud);
+    reg_grow_extract.setInputCloud(dst_cloud);
     for (const auto & cluster : clusters)
     {
         pcl::PointIndices::Ptr cluster_ptr(new pcl::PointIndices(cluster));
         reg_grow_extract.setIndices(cluster_ptr);
         reg_grow_extract.setNegative(true);
         reg_grow_extract.setKeepOrganized(true);
-        reg_grow_extract.filter(*cloud);
+        reg_grow_extract.filter(*dst_cloud);
     }
 
 
-    return result_cloud;
+
+
+
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> eucl_cluster_extr;
+    std::vector<pcl::PointIndices> eucl_cluster_indxes;
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree2(new pcl::search::KdTree<pcl::PointXYZ>);
+    tree2->setInputCloud(dst_cloud);
+
+    eucl_cluster_extr.setClusterTolerance(0.05);
+    eucl_cluster_extr.setMinClusterSize(8);
+    eucl_cluster_extr.setMaxClusterSize(500);
+    eucl_cluster_extr.setSearchMethod(tree2);
+    eucl_cluster_extr.setInputCloud(dst_cloud);
+    eucl_cluster_extr.extract(eucl_cluster_indxes);
+
+    auto cone_clusters = detectConesUsingICPandVisualize(
+        dst_cloud,
+        eucl_cluster_indxes,
+        cone_model_name,
+        40,
+        0.01,
+        -0.7,
+        0.2,
+        0.5,
+        20,
+        visualize_cone_detection
+    );
+
+    for (int cone_idx: cone_clusters)
+    {
+        for (const auto &idx: eucl_cluster_indxes[cone_idx].indices)
+        {
+            cones_cloud->push_back((*dst_cloud)[idx]);
+        }
+        cones_cloud->width = cones_cloud->size();
+        cones_cloud->height = 1;
+        cones_cloud->is_dense = true;
+    }
+
+
+
+    return cones_cloud;
 }
 
 
+
+pcl::PointCloud<pcl::PointXYZ>::Ptr
+get_obstacle_cloud(
+    pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud,
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cones_cloud
+    )
+{
+    pcl::PointCloud<pcl::PointXYZ>::Ptr obst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::copyPointCloud(*src_cloud, *obst_cloud);
+
+    pcl::SegmentDifferences<PointT> seg_diff;
+    seg_diff.setInputCloud(obst_cloud);
+    seg_diff.setTargetCloud(cones_cloud);
+    seg_diff.setDistanceThreshold(1e-6); // exact match threshold
+    seg_diff.segment(*obst_cloud);
+
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud(obst_cloud);
+    pass.setFilterFieldName("y");
+    pass.setFilterLimits(-0.65, 1);
+    pass.filter(*obst_cloud);
+
+
+    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
+    pcl::ExtractIndices<pcl::PointXYZ> reg_grow_extract;
+    pcl::search::Search<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
+    pcl::IndicesPtr indices(new std::vector<int>);
+    std::vector<pcl::PointIndices> clusters;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
+
+    pcl::removeNaNFromPointCloud(*obst_cloud, *indices);
+    normal_estimator.setSearchMethod(tree);
+    normal_estimator.setInputCloud(obst_cloud);
+    normal_estimator.setKSearch(50);
+    normal_estimator.compute(*normals);
+    reg.setInputCloud(obst_cloud);
+    reg.setMinClusterSize(500);
+    reg.setMaxClusterSize(10000000);
+    reg.setSearchMethod(tree);
+    reg.setNumberOfNeighbours(300);
+    reg.setIndices(indices);
+    reg.setInputNormals(normals);
+    reg.setSmoothnessThreshold(1 / 180.0 * M_PI);
+    reg.setCurvatureThreshold(1);
+    reg.extract(clusters);
+    reg_grow_extract.setInputCloud(obst_cloud);
+    for (const auto & cluster : clusters)
+    {
+        pcl::PointIndices::Ptr cluster_ptr(new pcl::PointIndices(cluster));
+        reg_grow_extract.setIndices(cluster_ptr);
+        reg_grow_extract.setNegative(true);
+        reg_grow_extract.setKeepOrganized(true);
+        reg_grow_extract.filter(*obst_cloud);
+    }
+
+
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(obst_cloud);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(0.8);
+    sor.filter(*obst_cloud);
+
+    return obst_cloud;
+}
 
 
 
@@ -449,8 +562,9 @@ main()
     int j = 0;
     pcl::PCDWriter writer;
     const pcl::PointCloud<pcl::PointXYZ>::Ptr original_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cones_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr obst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCDReader reader;
 
     reader.read<pcl::PointXYZ>(file_name, *cloud);
@@ -460,246 +574,46 @@ main()
     pcl::transformPointCloud(*original_cloud, *original_cloud, get_rotation_matrix());
 
 
-    /*
-    // Statistical Outlier remover
-    sor.setInputCloud (cloud);
-    sor.setMeanK (50);
-    sor.setStddevMulThresh (1.0);
-    sor.filter (*cloud);*/
 
 
-    // Downsample
-    /*
-        pcl::VoxelGrid<pcl::PointXYZ> vox_grid;
-        vox_grid.setInputCloud(cloud);
-        vox_grid.setLeafSize(0.01f, 0.01f, 0.01f);
-        vox_grid.filter(*cloud);
-    */
+    cones_cloud = get_cones_cloud(cloud);
+    obst_cloud = get_obstacle_cloud(cloud, cones_cloud);
 
-    //cutting high points
-    pcl::PassThrough<pcl::PointXYZ> pass;
-    pass.setInputCloud(cloud);
-    pass.setFilterFieldName("y");
-    pass.setFilterLimits(-10.0, -0.2);
-    //pass.setNegative (true);
-    pass.filter(*cloud);
-
-
-    sor.setInputCloud(cloud);
-    sor.setMeanK(50);
-    sor.setStddevMulThresh(0.8);
-    sor.filter(*cloud);
-
-    /*
-
-    // Segmentation
-    pcl::ModelCoefficients::Ptr coefficients(new pcl::ModelCoefficients());
-    pcl::PointIndices::Ptr inliers(new pcl::PointIndices());
-    pcl::SACSegmentation<pcl::PointXYZ> seg;
-    pcl::ExtractIndices<pcl::PointXYZ> seg_extract;
-
-    seg.setOptimizeCoefficients(true); //optional
-    seg.setModelType(pcl::SACMODEL_PLANE);
-    seg.setMethodType(pcl::SAC_RANSAC);
-    //seg.setMaxIterations(1000);
-    seg.setDistanceThreshold(0.01);
-
-    const int initial_nr_points = cloud->size();
-
-    while (true)
-    {
-        seg.setInputCloud(cloud);
-        seg.segment(*inliers, *coefficients);
-
-        seg_extract.setInputCloud(cloud);
-        seg_extract.setIndices(inliers);
-        seg_extract.setNegative(true);
-        seg_extract.setKeepOrganized(false);
-        seg_extract.filter(*cloud);
-
-        if (cloud->size() < 0.4 * initial_nr_points) break;
-    }*/
-
-
-    // Statistical Outlier remover
-    /*
-    sor.setInputCloud (cloud);
-    sor.setMeanK (50);
-    sor.setStddevMulThresh (2);
-    sor.filter (*cloud);*/
-
-
-    //Region growing
-    pcl::ExtractIndices<pcl::PointXYZ> reg_grow_extract;
-    pcl::search::Search<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
-    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
-    normal_estimator.setSearchMethod(tree);
-    normal_estimator.setInputCloud(cloud);
-    normal_estimator.setKSearch(50);
-    normal_estimator.compute(*normals);
-
-    pcl::IndicesPtr indices(new std::vector<int>);
-    pcl::removeNaNFromPointCloud(*cloud, *indices);
-
-    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
-    reg.setInputCloud(cloud);
-    reg.setMinClusterSize(500);
-    reg.setMaxClusterSize(10000000);
-    reg.setSearchMethod(tree);
-    reg.setNumberOfNeighbours(300);
-    reg.setIndices(indices);
-    reg.setInputNormals(normals);
-    reg.setSmoothnessThreshold(1 / 180.0 * M_PI);
-    reg.setCurvatureThreshold(1);
-
-    std::vector<pcl::PointIndices> clusters;
-    reg.extract(clusters);
-    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
-
-    constexpr int clusters_to_be_removed[] = {1, 2, 3};
-
-    reg_grow_extract.setInputCloud(cloud);
-
-    j = 0;
-    for (const auto &cluster: clusters)
-    {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-        for (const auto &idx: cluster.indices)
-        {
-            cloud_cluster->push_back((*cloud)[idx]);
-        }
-        cloud_cluster->width = cloud_cluster->size();
-        cloud_cluster->height = 1;
-        cloud_cluster->is_dense = true;
-
-        std::cout << "PointCloud representing the Cluster: " << cloud_cluster->size() << " data points." << std::endl;
-        std::stringstream ss;
-        ss << std::setw(4) << std::setfill('0') << j;
-        writer.write<pcl::PointXYZ>("reg_cloud_cluster_" + ss.str() + ".pcd", *cloud_cluster, false);
-        j++;
-    }
-
-
-    reg_grow_extract.setInputCloud(cloud);
-    for (const auto & cluster : clusters)
-    {
-        pcl::PointIndices::Ptr cluster_ptr(new pcl::PointIndices(cluster));
-        reg_grow_extract.setIndices(cluster_ptr);
-        reg_grow_extract.setNegative(true);
-        reg_grow_extract.setKeepOrganized(true);
-        reg_grow_extract.filter(*cloud);
-    }
-
-
-    //Conditional Euclidian clustering
-    // Creating the KdTree object for the search method of the extraction
-
-
-    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree2(new pcl::search::KdTree<pcl::PointXYZ>);
-    tree2->setInputCloud(cloud);
-
-    std::vector<pcl::PointIndices> cluster_indices;
-    pcl::EuclideanClusterExtraction<pcl::PointXYZ> eucl_cluster_extr;
-    eucl_cluster_extr.setClusterTolerance(0.05);
-    eucl_cluster_extr.setMinClusterSize(8);
-    eucl_cluster_extr.setMaxClusterSize(500);
-    eucl_cluster_extr.setSearchMethod(tree2);
-    eucl_cluster_extr.setInputCloud(cloud);
-    eucl_cluster_extr.extract(cluster_indices);
-
-
-    /*
-        pcl::ConditionalEuclideanClustering<PointT> cec(true);
-        cec.setInputCloud(cloud);
-        cec.setConditionFunction(&customDensityCondition);
-        cec.setClusterTolerance(0.05);
-        cec.setMinClusterSize(8);
-        cec.setMaxClusterSize(500);
-        std::vector<pcl::PointIndices> cluster_indices;
-        cec.segment(clusters);
-    */
-
-
-    j = 0;
-    for (const auto &cluster: cluster_indices)
-    {
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
-        for (const auto &idx: cluster.indices)
-        {
-            cloud_cluster->push_back((*cloud)[idx]);
-        }
-        cloud_cluster->width = cloud_cluster->size();
-        cloud_cluster->height = 1;
-        cloud_cluster->is_dense = true;
-
-        /*
-        std::cout << "cone cluster " << j <<  ": " << cloud_cluster->size() << " data points." << std::endl;
-        std::stringstream ss;
-        ss << std::setw(4) << std::setfill('0') << j;
-        writer.write<pcl::PointXYZ>("cloud_cluster_" + ss.str() + ".pcd", *cloud_cluster, false);
-        */
-        j++;
-    }
-
-
-    // min cone height = 0.3 ==> ottimo riconoscimento
-    // dei coni, però la curva non viene vista
-
-    // min cone height = 0.1 ==> ottimo riconoscimento
-    // dei coni, però la curva non viene vista
-
-
-    std::string cone_model = "cone_surface_only.ply";
-    auto cone_clusters = detectConesUsingICPandVisualize(
-        cloud,
-        cluster_indices,
-        cone_model,
-        40,
-        0.01,
-        -0.7,
-        0.2,
-        0.5,
-        20,
-        true
-    );
-
-    for (int idx: cone_clusters)
-        std::cout << "Cluster " << idx << " is likely a cone.\n";
-
-    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler(
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_original_cloud(
         original_cloud,
         0,
-        255,
+        0,
         0);
-    viewer.addPointCloud(original_cloud, handler, "original");
+    viewer.addPointCloud(original_cloud, handler_original_cloud, "original_cloud");
 
-    j = 0;
-    for (const auto cluster_index: cone_clusters)
-    {
-        ColorUtilities color_util;
-        pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_cluster(new pcl::PointCloud<pcl::PointXYZ>);
+    
 
-        for (const auto &idx: cluster_indices[cluster_index].indices)
-        {
-            cloud_cluster->push_back((*cloud)[idx]);
-        }
 
-        auto [rr, gg, bb] = color_util.getColor(j);
-        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler(
-            cloud_cluster,
-            255,
-            0,
-            0);
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_cones_cloud(
+        cones_cloud,
+        255,
+        0,
+        0);
+    viewer.addPointCloud(cones_cloud, handler_cones_cloud, "cones_cloud");
 
-        viewer.addPointCloud(cloud_cluster, handler, std::to_string(j));
-        j++;
-    }
 
-    // Visualizer
-    //viewer.addPointCloud(cloud, "Result");
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_obst_cloud(
+        obst_cloud,
+        0,
+        255,
+        255);
+    viewer.addPointCloud(obst_cloud, handler_obst_cloud, "obst_cloud");
 
-    //viewer.addPointCloud(colored_cloud, "Colors");
+
+    /*
+    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_cones_cloud(
+        cones_cloud,
+        255,a
+        0,
+        0);
+    viewer.addPointCloud(cones_cloud, handler_cones_cloud, "original");
+*/
+
 
     viewer.setBackgroundColor(0, 0, 0);
     viewer.addCoordinateSystem(1.0);
