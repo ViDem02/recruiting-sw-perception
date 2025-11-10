@@ -3,26 +3,10 @@
 #include <vector>
 #include <iostream>
 #include <cmath>
-#include <limits>
 #include <pcl/point_types.h>
-#include <pcl/segmentation/segment_differences.h>
-#include <pcl/common/transforms.h>
-#include <pcl/io/pcd_io.h>
-
-
-#include <pcl/ModelCoefficients.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/common/transforms.h>
-#include <pcl/sample_consensus/method_types.h>
-#include <pcl/sample_consensus/model_types.h>
-#include <pcl/segmentation/sac_segmentation.h>
-#include <pcl/filters/voxel_grid.h>
-#include <pcl/filters/extract_indices.h>
-
-#include <pcl/console/parse.h>
 #include <pcl/point_cloud.h> // for PointCloud
-#include <pcl/visualization/pcl_visualizer.h>
+#include "DistinguishLeftRight.h"
+
 
 /*
  Transliteration of pathplanning/racingline.py using NLOPT.
@@ -93,7 +77,7 @@ struct TrackData {
 // x: vector d[0..N-1]
 // returns curvature cost + smoothness cost.
 static double objective_func(unsigned n, const double* x, double* grad, void* data) {
-    TrackData* td = static_cast<TrackData*>(data);
+    auto* td = static_cast<TrackData*>(data);
     int N = td->N;
     const auto& mid = td->mid;
     const auto& normal = td->normal;
@@ -128,13 +112,107 @@ static double objective_func(unsigned n, const double* x, double* grad, void* da
 }
 
 
+pcl::PointCloud<pcl::PointXYZ>::Ptr
+get_racing_line_point_cloud(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cones,
+    double robot_x,
+    double robot_y,
+    float y_constant = 0,
+    int nr_points_lin_space = 100
+    )
+{
+
+    auto left_right_res = cones::distinguishLeftRight(
+        source_cones,
+        robot_x, robot_y);
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr racing_line(new pcl::PointCloud<pcl::PointXYZ>);
+
+    std::vector<std::vector<double>> left = {};
+    std::vector<std::vector<double>> right = {};
+
+    for (auto& point : *left_right_res.left)
+    {
+        left.push_back({point.x, point.z});
+    }
+
+    for (auto& point : *left_right_res.right)
+    {
+        right.push_back({point.x, point.z});
+    }
+
+    TrackData td(
+        left,
+        right
+        );
+
+    int N = td.N;
+
+    // Choose an algorithm: LN_BOBYQA (derivative-free, bound-constrained)
+    nlopt_opt opt = nlopt_create(NLOPT_LN_BOBYQA, N);
+
+    // Bounds
+    std::vector<double> lb(N), ub(N);
+    for (int i=0;i<N;++i) {
+        lb[i] = -td.half_width[i];
+        ub[i] =  td.half_width[i];
+    }
+    nlopt_set_lower_bounds(opt, lb.data());
+    nlopt_set_upper_bounds(opt, ub.data());
+
+    nlopt_set_min_objective(opt, objective_func, &td);
+    nlopt_set_xtol_rel(opt, 1e-6);
+    nlopt_set_maxeval(opt, 1000);
+
+    std::vector<double> x(N, 0.0); // initial guess centered
+    double minf;
+    nlopt_result opti_res = nlopt_optimize(opt, x.data(), &minf);
+    if (opti_res < 0) {
+        std::cerr << "Optimization failed with code: " << opti_res << std::endl;
+        nlopt_destroy(opt);
+        return racing_line;
+    }
+
+    if (td.mid.size() > 2)
+    {
+        for (int i=1;i<(N-1);++i)
+        {
+            pcl::PointXYZ pt;
+
+            float X1 = td.mid[i-1][0] + x[i]*td.normal[i-1][0];
+            float Z1 = td.mid[i-1][1] + x[i]*td.normal[i-1][1];
+
+            float X2 = td.mid[i][0] + x[i]*td.normal[i][0];
+            float Z2 = td.mid[i][1] + x[i]*td.normal[i][1];
+
+            auto x_vect = linspace(X1, X2, nr_points_lin_space);
+            auto z_vect = linspace(Z1, Z2, nr_points_lin_space);
+
+            for (int j=0;j<nr_points_lin_space;++j)
+            {
+                pt.x = x_vect[j];
+                pt.y = y_constant;
+                pt.z = z_vect[j];
+
+                racing_line->push_back(pt);
+            }
+        }
+    }
+
+    nlopt_destroy(opt);
+    return racing_line;
+}
+
+
+
+
 
 
 
 int main() {
-    constexpr int y_constant = 0;
-    constexpr int nr_points_lin_space = 100;
 
+    constexpr int nr_points_lin_space = 30;
+    constexpr float y_constant = 0;
 
     const pcl::PointCloud<pcl::PointXYZ>::Ptr source_cones_left(new pcl::PointCloud<pcl::PointXYZ>);
     const pcl::PointCloud<pcl::PointXYZ>::Ptr source_cones_right(new pcl::PointCloud<pcl::PointXYZ>);
