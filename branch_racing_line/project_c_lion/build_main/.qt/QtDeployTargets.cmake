@@ -1,0 +1,2 @@
+set(__QT_DEPLOY_TARGET_pointcloud_main_FILE /Users/vi/Documents/Projects/PerceptionRecruitment/branch_racing_line/project_c_lion/build_main/pointcloud_main)
+set(__QT_DEPLOY_TARGET_pointcloud_main_TYPE EXECUTABLE)

@@ -38,8 +38,8 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-COPY CMakeLists.txt .
-COPY racingline_nlopt.cpp .
+COPY project_c_lion/CMakeLists.txt .
+COPY project_c_lion/src/racingline_nlopt.cpp .
 
 RUN mkdir -p build \
     && cd build \

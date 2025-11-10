@@ -3,7 +3,6 @@
 #include <vector>
 #include <cmath>
 #include <limits>
-#include <optional>
 #include <iostream>
 #include <numeric>
 
