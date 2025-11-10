@@ -437,9 +437,6 @@ get_cones_cloud(
     }
 
 
-
-
-
     pcl::EuclideanClusterExtraction<pcl::PointXYZ> eucl_cluster_extr;
     std::vector<pcl::PointIndices> eucl_cluster_indxes;
     pcl::search::KdTree<pcl::PointXYZ>::Ptr tree2(new pcl::search::KdTree<pcl::PointXYZ>);
@@ -471,14 +468,137 @@ get_cones_cloud(
         {
             cones_cloud->push_back((*dst_cloud)[idx]);
         }
+
         cones_cloud->width = cones_cloud->size();
         cones_cloud->height = 1;
         cones_cloud->is_dense = true;
     }
 
-
-
     return cones_cloud;
+}
+
+
+std::vector<pcl::PointXYZ>
+get_cones_barycenter(
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr &src_cloud,
+    const float cut_bottom = -10.0,
+    const float cut_top = -0.2,
+    std::string cone_model_name = "cone_surface_only.ply",
+    bool visualize_cone_detection = false
+)
+{
+
+    // TODO : edit the algorithm so that only one variable is created
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cones_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr dst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+    pcl::copyPointCloud(*src_cloud, *dst_cloud);
+
+    pcl::PassThrough<pcl::PointXYZ> pass;
+    pass.setInputCloud(dst_cloud);
+    pass.setFilterFieldName("y");
+    pass.setFilterLimits(cut_bottom, cut_top);
+    pass.filter(*dst_cloud);
+
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    sor.setInputCloud(dst_cloud);
+    sor.setMeanK(50);
+    sor.setStddevMulThresh(0.8);
+    sor.filter(*dst_cloud);
+
+
+    pcl::RegionGrowing<pcl::PointXYZ, pcl::Normal> reg;
+    pcl::ExtractIndices<pcl::PointXYZ> reg_grow_extract;
+    pcl::search::Search<pcl::PointXYZ>::Ptr tree(new pcl::search::KdTree<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::Normal>::Ptr normals(new pcl::PointCloud<pcl::Normal>);
+    pcl::NormalEstimation<pcl::PointXYZ, pcl::Normal> normal_estimator;
+    pcl::IndicesPtr indices(new std::vector<int>);
+    std::vector<pcl::PointIndices> clusters;
+    pcl::PointCloud<pcl::PointXYZRGB>::Ptr colored_cloud = reg.getColoredCloud();
+
+    pcl::removeNaNFromPointCloud(*dst_cloud, *indices);
+    normal_estimator.setSearchMethod(tree);
+    normal_estimator.setInputCloud(dst_cloud);
+    normal_estimator.setKSearch(50);
+    normal_estimator.compute(*normals);
+    reg.setInputCloud(dst_cloud);
+    reg.setMinClusterSize(500);
+    reg.setMaxClusterSize(10000000);
+    reg.setSearchMethod(tree);
+    reg.setNumberOfNeighbours(300);
+    reg.setIndices(indices);
+    reg.setInputNormals(normals);
+    reg.setSmoothnessThreshold(1 / 180.0 * M_PI);
+    reg.setCurvatureThreshold(1);
+    reg.extract(clusters);
+    reg_grow_extract.setInputCloud(dst_cloud);
+    for (const auto & cluster : clusters)
+    {
+        pcl::PointIndices::Ptr cluster_ptr(new pcl::PointIndices(cluster));
+        reg_grow_extract.setIndices(cluster_ptr);
+        reg_grow_extract.setNegative(true);
+        reg_grow_extract.setKeepOrganized(true);
+        reg_grow_extract.filter(*dst_cloud);
+    }
+
+
+    pcl::EuclideanClusterExtraction<pcl::PointXYZ> eucl_cluster_extr;
+    std::vector<pcl::PointIndices> eucl_cluster_indxes;
+    pcl::search::KdTree<pcl::PointXYZ>::Ptr tree2(new pcl::search::KdTree<pcl::PointXYZ>);
+    tree2->setInputCloud(dst_cloud);
+
+    eucl_cluster_extr.setClusterTolerance(0.05);
+    eucl_cluster_extr.setMinClusterSize(8);
+    eucl_cluster_extr.setMaxClusterSize(500);
+    eucl_cluster_extr.setSearchMethod(tree2);
+    eucl_cluster_extr.setInputCloud(dst_cloud);
+    eucl_cluster_extr.extract(eucl_cluster_indxes);
+
+    auto cone_clusters = detectConesUsingICPandVisualize(
+        dst_cloud,
+        eucl_cluster_indxes,
+        cone_model_name,
+        40,
+        0.01,
+        -0.7,
+        0.2,
+        0.5,
+        20,
+        visualize_cone_detection
+    );
+
+    std::vector<pcl::PointXYZ> barycenters (cone_clusters.size(), pcl::PointXYZ(0, 0, 0));
+
+    int counter = 0;
+    for (int cone_idx: cone_clusters)
+    {
+        float baric_x = 0;
+        float baric_z = 0;
+
+        std::cout << "Cone " << cone_idx << " detected\n";
+        for (const auto &idx: eucl_cluster_indxes[cone_idx].indices)
+        {
+            cones_cloud->push_back((*dst_cloud)[idx]);
+            std::cout << "Point in coord " << (*dst_cloud)[idx].x << ", " << (*dst_cloud)[idx].y << ", " << (*dst_cloud)[idx].z << "\n";
+            baric_x += (*dst_cloud)[idx].x;
+            baric_z += (*dst_cloud)[idx].z;
+        }
+
+        baric_x = baric_x / eucl_cluster_indxes[cone_idx].indices.size();
+        baric_z = baric_z / eucl_cluster_indxes[cone_idx].indices.size();
+
+        barycenters[counter].x = baric_x;
+        barycenters[counter].z = baric_z;
+
+        counter++;
+
+        cones_cloud->width = cones_cloud->size();
+        cones_cloud->height = 1;
+        cones_cloud->is_dense = true;
+    }
+
+    return barycenters;
 }
 
 
@@ -501,7 +621,7 @@ get_obstacle_cloud(
     pcl::PassThrough<pcl::PointXYZ> pass;
     pass.setInputCloud(obst_cloud);
     pass.setFilterFieldName("y");
-    pass.setFilterLimits(-0.65, 1);
+    pass.setFilterLimits(-0.68, 1);
     pass.filter(*obst_cloud);
 
 
@@ -543,7 +663,7 @@ get_obstacle_cloud(
     pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
     sor.setInputCloud(obst_cloud);
     sor.setMeanK(50);
-    sor.setStddevMulThresh(0.8);
+    sor.setStddevMulThresh(10);
     sor.filter(*obst_cloud);
 
     return obst_cloud;
@@ -573,10 +693,16 @@ main()
     pcl::transformPointCloud(*cloud, *cloud, get_rotation_matrix());
     pcl::transformPointCloud(*original_cloud, *original_cloud, get_rotation_matrix());
 
-
-
-
     cones_cloud = get_cones_cloud(cloud);
+    std::vector<pcl::PointXYZ> cones_barys = get_cones_barycenter(cloud);
+
+    for (pcl::PointXYZ point : cones_barys)
+    {
+        std::cout << "Point " << point << "\n";
+    }
+
+    return 0;
+
     obst_cloud = get_obstacle_cloud(cloud, cones_cloud);
 
     pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> handler_original_cloud(
