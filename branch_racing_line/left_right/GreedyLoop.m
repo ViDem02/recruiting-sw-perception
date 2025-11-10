@@ -1,32 +1,19 @@
 Cones = [
-    3.883    -3.466
-    3.774    -2.478
-    3.693    -1.193
-    3.436    -0.084
-    2.922    1.080
-    2.259    2.067
-    1.975    -3.574
-    1.542    -2.411
-    1.502    -1.856
-    1.245    -1.261
-    0.974    -0.814
-    0.257    -0.138
-    -1.163    0.484
-    1.488    2.649
-    0.122    3.596
-    -1.055    3.920
-    0.825    3.014
-    2.043    2.297
-    -0.257    0.214
-    -1.583    0.660
-    -1.975    0.836
+    0 0
+    0 3
+    1 5
+    3 5
+    0 0
+    1 2
+    3 4
+    4 4
 ];
 
 
 
 
 %% Parameters
-robot_pos =  [2.8, -6];  % start roughly below center
+robot_pos =  [0.5, -0.5];  % start roughly below center
 robot_heading = pi/2;               % facing upward
 max_angle = pi/2;                   % only consider cones within ±90°
 step_limit = 200;                   % safety limit
@@ -55,7 +42,7 @@ for step = 1:step_limit
     angles = wrapToPi(angles);
 
     % Widen field of view — allow cones up to 150° behind
-    visible_idx = find(abs(angles) < deg2rad(150));
+    visible_idx = find(abs(angles) < deg2rad(90));
     if isempty(visible_idx)
         break;
     end

@@ -5,37 +5,20 @@ clear all;
 %% --- Input data ---
 
 Cones = [
-    3.883    -3.466
-    3.774    -2.478
-    3.693    -1.193
-    3.436    -0.084
-    2.922    1.080
-    2.259    2.067
-    1.975    -3.574
-    1.542    -2.411
-    1.502    -1.856
-    1.245    -1.261
-    0.974    -0.814
-    0.257    -0.138
-    -1.163    0.484
-    1.488    2.649
-    0.122    3.596
-    -1.055    3.920
-    0.825    3.014
-    2.043    2.297
-    -0.257    0.214
-    -1.583    0.660
-    -1.975    0.836
+    0 0
+    0 3
+    2 5
+    3 5
+    1 0
+    1 2
+    3 4
 ];
 
 
-x = 3;
-y = -4;
+x = +0.5;
+y = -0.5;
 
 robotCurrentLocation = [x y];
-
-
-
 
 
 % === Step 1: pick two closest cones to the robot ===
@@ -53,12 +36,57 @@ remaining([first_idx, second_idx]) = false;
 current_l = first_idx;
 current_r = second_idx;
 
-angle_low = -160; 
-angle_high = 160;
+% Angle constraints: corridor turn angle must lie within [-45°, +45°]
+angle_low = -45; 
+angle_high = 45;
 
 for step = 1:(size(Cones,1)-2)
     rem_idx = find(remaining);
     if isempty(rem_idx), break; end
+
+    % If only one cone is left, assign it to the side that yields the smallest turn
+    if numel(rem_idx) == 1
+        lastIdx = rem_idx(1);
+
+        % Compute signed turn angle if appended to LEFT path
+        if size(path_l,1) >= 2
+            prev = path_l(end-1,:);
+            curr = path_l(end,:);
+            next = Cones(lastIdx,:);
+            v_in  = curr - prev;
+            v_out = next - curr;
+            a1 = atan2(v_in(2), v_in(1));
+            a2 = atan2(v_out(2), v_out(1));
+            deltaIfLeft = rad2deg(wrapToPi(a2 - a1));
+        else
+            deltaIfLeft = 0; % neutral if not enough history
+        end
+
+        % Compute signed turn angle if appended to RIGHT path
+        if size(path_r,1) >= 2
+            prev = path_r(end-1,:);
+            curr = path_r(end,:);
+            next = Cones(lastIdx,:);
+            v_in  = curr - prev;
+            v_out = next - curr;
+            a1 = atan2(v_in(2), v_in(1));
+            a2 = atan2(v_out(2), v_out(1));
+            deltaIfRight = rad2deg(wrapToPi(a2 - a1));
+        else
+            deltaIfRight = 0; % neutral if not enough history
+        end
+
+        % Choose the side with the least absolute turn angle
+        if abs(deltaIfLeft) <= abs(deltaIfRight)
+            path_l = [path_l; Cones(lastIdx,:)];
+            current_l = lastIdx;
+        else
+            path_r = [path_r; Cones(lastIdx,:)];
+            current_r = lastIdx;
+        end
+        remaining(lastIdx) = false;
+        continue;
+    end
 
     % Compute nearest candidates
     d_left  = sqrt(sum((Cones(rem_idx,:) - Cones(current_l,:)).^2, 2));
@@ -100,9 +128,10 @@ for step = 1:(size(Cones,1)-2)
 
         a1 = atan2(v_in(2), v_in(1));
         a2 = atan2(v_out(2), v_out(1));
-        deltaL = abs(rad2deg(wrapToPi(a2 - a1)));
+        % Signed turn angle (degrees)
+        deltaL = rad2deg(wrapToPi(a2 - a1));
     else
-        deltaL = 90; % neutral angle for first step
+        deltaL = 0; % neutral angle for first step
     end
 
     % For right path
@@ -116,9 +145,10 @@ for step = 1:(size(Cones,1)-2)
 
         a1 = atan2(v_in(2), v_in(1));
         a2 = atan2(v_out(2), v_out(1));
-        deltaR = abs(rad2deg(wrapToPi(a2 - a1)));
+        % Signed turn angle (degrees)
+        deltaR = rad2deg(wrapToPi(a2 - a1));
     else
-        deltaR = 90; % neutral
+        deltaR = 0; % neutral
     end
 
     % --- check angles ---
