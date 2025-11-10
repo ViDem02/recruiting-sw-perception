@@ -109,11 +109,18 @@ Seen https://learn.microsoft.com/en-us/cpp/cpp/header-files-cpp?view=msvc-170
 Seen https://learn.microsoft.com/en-us/cpp/cpp/modules-cpp?view=msvc-170
 
 
-# Saturday progress
+## Saturday progress
 
 Done some experimentation on filtering and working 
 with point clouds.
 
-# Sunday plan
+## Sunday plan
 
-Work with 
+Continued RD and wrote a comprehensive routine to get the cones. 
+
+## Tuesday progress
+Recognized the obstacles. Worked on racing line generation.
+
+## Monday progress
+The algorithm for the racing line works. Now it's time to write it in C++ to be used in the perception-action pipeline. 
+
