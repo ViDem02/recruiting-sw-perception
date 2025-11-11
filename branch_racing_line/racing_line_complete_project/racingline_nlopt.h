@@ -14,11 +14,11 @@ namespace pcl
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 get_racing_line_point_cloud(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cones,
-    double robot_x,
-    double robot_y,
-    float y_constant = 0,
-    int nr_points_lin_space = 100
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& src_left,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& src_right,
+    int nr_points_lin_space = 100,
+    float y_constant = 0
     );
+
 
 #endif //RACINGLINE_RACINGLINE_NLOPT_H

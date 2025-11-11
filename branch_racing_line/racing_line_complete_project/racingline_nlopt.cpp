@@ -114,32 +114,35 @@ static double objective_func(unsigned n, const double* x, double* grad, void* da
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 get_racing_line_point_cloud(
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr& source_cones,
-    double robot_x,
-    double robot_y,
-    float y_constant = 0,
-    int nr_points_lin_space = 100
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& src_left,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& src_right,
+    int nr_points_lin_space = 100,
+    float y_constant = 0
     )
 {
 
-    auto left_right_res = cones::distinguishLeftRight(
+    /*auto [src_left, src_right] = cones::distinguishLeftRight(
         source_cones,
-        robot_x, robot_y);
+        robot_x, robot_y, -45, +45, .5);*/
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr racing_line(new pcl::PointCloud<pcl::PointXYZ>);
 
     std::vector<std::vector<double>> left = {};
     std::vector<std::vector<double>> right = {};
 
-    for (auto& point : *left_right_res.left)
+    for (auto& point : *src_left)
     {
+        std::cout << point.x << " " << point.z << std::endl;
         left.push_back({point.x, point.z});
     }
 
-    for (auto& point : *left_right_res.right)
+    for (auto& point : *src_right)
     {
+        std::cout << point.x << " " << point.z << std::endl;
         right.push_back({point.x, point.z});
     }
+
+    if (left.size() == 0 || right.size() == 0) return racing_line;
 
     TrackData td(
         left,
@@ -175,6 +178,28 @@ get_racing_line_point_cloud(
 
     if (td.mid.size() > 2)
     {
+        int i = 0;
+        pcl::PointXYZ pt;
+
+        float X1 = 0;
+        float Z1 = 0;
+
+        float X2 = td.mid[i][0] + x[i]*td.normal[i][0];
+        float Z2 = td.mid[i][1] + x[i]*td.normal[i][1];
+
+        auto x_vect = linspace(X1, X2, nr_points_lin_space);
+        auto z_vect = linspace(Z1, Z2, nr_points_lin_space);
+
+        for (int j=0;j<nr_points_lin_space;++j)
+        {
+            pt.z = x_vect[j];
+            pt.y = y_constant;
+            pt.x = z_vect[j];
+
+            racing_line->push_back(pt);
+        }
+
+
         for (int i=1;i<(N-1);++i)
         {
             pcl::PointXYZ pt;

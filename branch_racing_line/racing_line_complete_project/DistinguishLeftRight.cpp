@@ -13,7 +13,7 @@ struct Result {
     pcl::PointCloud<pcl::PointXYZ>::Ptr right;
 };
 
-static inline double wrapToPi(double a) {
+static double wrapToPi(double a) {
     while (a > M_PI) a -= 2*M_PI;
     while (a < -M_PI) a += 2*M_PI;
     return a;
@@ -31,12 +31,17 @@ static double turn_angle_deg(const pcl::PointXYZ& prev, const pcl::PointXYZ& cur
 }
 
 Result distinguishLeftRight(
-    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& src_cones,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& src_cones,
     double robot_x, double robot_y,
-    double angle_low_deg = -45.0, double angle_high_deg = 45.0)
+    double angle_low_deg = -45.0, double angle_high_deg = 45.0,
+    double max_distance = std::numeric_limits<double>::infinity())
 {
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr cones(new pcl::PointCloud<pcl::PointXYZ>());
+
+    // Clamp negative distances to zero to avoid unintended inclusion.
+    double md = std::max(0.0, max_distance);
+    double max_dist_sq = md * md;
 
     for (int i = 0; i < src_cones->size(); ++i)
     {
@@ -44,7 +49,13 @@ Result distinguishLeftRight(
         p.x = src_cones->points[i].z;
         p.z = src_cones->points[i].x;
         p.y = 0;
-        cones->push_back(p);
+        // distance in the transformed frame using x,y (z unused for planning)
+        double dx = p.x - robot_x;
+        double dy = p.y - robot_y;
+        double dist_sq = dx*dx + dy*dy;
+        if (dist_sq <= max_dist_sq) {
+            cones->push_back(p);
+        }
     }
 
     Result res{pcl::make_shared<pcl::PointCloud<pcl::PointXYZ>>(),
@@ -182,17 +193,3 @@ Result distinguishLeftRight(
 
 }
 
-
-/*
-int main(){
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>());
-    std::vector<std::pair<float,float>> pts = {
-        {0,0},{0,3},{2,5},{3,5},{1,0},{1,2},{3,4}
-    };
-    for (auto &p: pts){ pcl::PointXYZ q; q.x=p.first; q.y=p.second; q.z=0; cloud->push_back(q);}
-    auto res = cones::distinguishLeftRight(cloud, 0.5, -0.5);
-    std::cout << "Left path:\n"; for (auto &p: res.left->points) std::cout<<p.x<<","<<p.y<<"\n";
-    std::cout << "Right path:\n"; for (auto &p: res.right->points) std::cout<<p.x<<","<<p.y<<"\n";
-    return 0;
-}
-*/

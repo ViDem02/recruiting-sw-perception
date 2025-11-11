@@ -2,6 +2,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <vector>
+#include <limits>
 
 namespace cones {
 
@@ -11,10 +12,10 @@ struct Result {
 };
 
 Result distinguishLeftRight(
-    const pcl::PointCloud<pcl::PointXYZ>::ConstPtr& cones,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr& cones,
     double robot_x, double robot_y,
-    double angle_low_deg = -45.0, double angle_high_deg = 45.0
+    double angle_low_deg = -45.0, double angle_high_deg = 45.0,
+    double max_distance = std::numeric_limits<double>::infinity()
     );
 
 }
-

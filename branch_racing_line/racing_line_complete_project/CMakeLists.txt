@@ -10,7 +10,19 @@ find_package(PCL 1.3 REQUIRED)
 
 add_executable(sample_consensus main.cpp ColorUtilities.h
         racingline_nlopt.cpp
-        DistinguishLeftRight.cpp)
+        DistinguishLeftRight.cpp
+        cones_recog.cpp
+        cones_recog.cpp
+        cones_recog.h
+        cones_recog.h
+        cones_recog.cpp
+        get_cones_cloud.h
+        get_cones_cloud.cpp
+        get_cones_cloud.cpp
+        get_cones_cloud.h
+        get_obstacle_cloud.cpp
+        get_obstacle_cloud.cpp
+        get_obstacle_cloud.h)
 target_link_libraries(sample_consensus ${PCL_LIBRARIES})
 target_include_directories(sample_consensus PRIVATE ${NLOPT_INCLUDE_DIRS} )
 target_link_directories(sample_consensus PRIVATE ${NLOPT_LIBRARY_DIRS})
