@@ -6,27 +6,17 @@ clear all;
 
 Cones = [
 -0.66185 4.8492
+1.1191 8.82345
 0.594821 4.87921
 0.356828 5.97727
 0.548648 7.32776
--0.927375 6.8815
-1.14332 6.51109
-];
-
-
-Cones = [
--0.66185 4.8492 %
-0.594821 4.87921
-0.356828 5.97727
-0.548648 7.32776
--0.927375 6.8815 %
-1.14332 6.51109 %
+-0.928166 6.87977
+1.14457 6.50828
 ];
 
 
 
-
-Cones(:,2) =  (Cones(:,2) );
+Cones(:,2) =  (Cones(:,2)).^1.1;
 
 x = +0.5;
 y = -0.5;
@@ -168,7 +158,7 @@ for step = 1:(size(Cones,1)-2)
     badL = ~isnan(deltaL) && (deltaL < angle_low || deltaL > angle_high);
     badR = ~isnan(deltaR) && (deltaR < angle_low || deltaR > angle_high);
 
-    %--- if either bad, try swapping ---
+    % --- if either bad, try swapping ---
     if badL || badR
         tmp = candL; candL = candR; candR = tmp;
         tmp = deltaL; deltaL = deltaR; deltaR = tmp;
