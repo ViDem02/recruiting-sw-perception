@@ -42,9 +42,5 @@ target_link_libraries(racingline_nlopt
     ${PCL_LIBRARIES}
 )
 
-# Example executable using legacy procedural API
-add_executable(cones_detection_legacy
-    cones_recog.cpp
-    cones_recog.h
-)
-target_link_libraries(cones_detection_legacy ${PCL_LIBRARIES})
+# Legacy cones_recog library already built above - no separate executable needed
+# (The procedural API is demonstrated through unit tests or can be linked into other executables)
