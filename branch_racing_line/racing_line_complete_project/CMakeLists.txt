@@ -44,3 +44,13 @@ target_link_libraries(racingline_nlopt
 
 # Legacy cones_recog library already built above - no separate executable needed
 # (The procedural API is demonstrated through unit tests or can be linked into other executables)
+
+# Test executable demonstrating the refactored API
+add_executable(test_cones_recognizer
+    test_cones_recognizer.cpp
+)
+target_link_libraries(test_cones_recognizer
+    cones_recognizer
+    distinguish_left_right
+    ${PCL_LIBRARIES}
+)
