@@ -1,0 +1,11 @@
+build/
+*.o
+*.a
+*.so
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+Makefile
+racingline_nlopt
+cones_detection_legacy
+test_cones_recognizer
