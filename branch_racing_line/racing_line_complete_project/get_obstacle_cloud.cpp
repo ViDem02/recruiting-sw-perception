@@ -1,7 +1,3 @@
-//
-// Created by Vi De Matteis on 11/11/25.
-//
-
 #include <iostream>
 #include <thread>
 #include <vector>
@@ -21,10 +17,8 @@
 
 
 #include "get_obstacle_cloud.h"
-
 #include <pcl/segmentation/segment_differences.h>
 
-#include "get_cones_cloud.h"
 
 pcl::PointCloud<pcl::PointXYZ>::Ptr
 get_obstacle_cloud(

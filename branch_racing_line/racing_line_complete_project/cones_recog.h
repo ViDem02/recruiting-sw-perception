@@ -12,7 +12,7 @@
 std::vector<int> detectCones(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
     const std::vector<pcl::PointIndices> &cluster_indices,
-    const std::string &cone_model_ply,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr &cone_model,
     int icp_max_iter = 40,
     double fitness_threshold = 0.01,
     double height_threshold = -0.01, // <-- adjust as needed (meters)

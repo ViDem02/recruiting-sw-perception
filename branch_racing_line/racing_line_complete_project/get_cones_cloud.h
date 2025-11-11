@@ -16,7 +16,8 @@ get_cones_cloud(
     double initial_sor_std_dev_thr,
     float cut_bottom,
     float cut_top,
-    const std::string& cone_model_name, double detect_cones_fitness_detection, bool verbose, bool visualize_cone_detection = false
+    const std::string& cone_model_name, double detect_cones_fitness_detection, bool verbose, const pcl::PointCloud<pcl::
+    PointXYZ>::Ptr &ideal_cone_model, bool visualize_cone_detection = false
 );
 
 #endif //SECOND_PRJ_SETUP_GET_CONES_CLOUD_H

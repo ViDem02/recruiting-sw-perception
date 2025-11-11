@@ -1,22 +1,11 @@
 #include <iostream>
 #include <thread>
-#include <vector>
-#include <pcl/segmentation/segment_differences.h>
 #include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/search/search.h>
-#include <pcl/search/kdtree.h>
-#include <pcl/features/normal_3d.h>
-#include <pcl/filters/extract_indices.h>
 #include <pcl/visualization/pcl_visualizer.h>
-#include <pcl/filters/filter_indices.h>
-#include <pcl/segmentation/region_growing.h>
-#include <pcl/filters/passthrough.h>
-#include <pcl/filters/voxel_grid.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/io.h>
-#include <pcl/filters/statistical_outlier_removal.h>
-#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/io/ply_io.h>
 #include <pcl/registration/icp.h>
 
 #include "cones_recog.h"
@@ -27,8 +16,6 @@
 
 //TODO: To be removed
 //TODO: As final step, introduce typedefs
-
-
 
 
 Eigen::Affine3f
@@ -53,20 +40,29 @@ main()
     constexpr float cone_detection_cut_bottom = -10.0;
     constexpr float cone_detection_cut_top = -0.2;
     constexpr float transl_on_y_axis = 0.1;
-    constexpr float dist_left_right_max_dist = 0.5; //default 05
+    constexpr float dist_left_right_max_dist = 6; //default 05
     constexpr double detect_cones_fitness_detection = 0.005;
     constexpr bool verbose = true;
 
-
     pcl::visualization::PCLVisualizer viewer("VISUAL");
-
     pcl::PCDWriter writer;
-    const pcl::PointCloud<pcl::PointXYZ>::Ptr original_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+
+
+    pcl::PointCloud<pcl::PointXYZ>::Ptr original_cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr ideal_cone_model(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr reference_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr obst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr racing_line(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCDReader reader;
+
+    if (pcl::io::loadPLYFile<pcl::PointXYZ>(ideal_cone_model_name, *ideal_cone_model) == -1)
+    {
+        PCL_ERROR("Couldn't read the cone model PLY file.\n");
+        return {};
+    }
+
+    if (verbose) std::cout << "Loaded reference cone model with " << ideal_cone_model->size() << " points\n";
 
     reader.read<pcl::PointXYZ>(file_name, *original_cloud);
 
@@ -81,7 +77,7 @@ main()
         initial_sor_std_dev_thr,
         cone_detection_cut_bottom,
         cone_detection_cut_top,
-        ideal_cone_model_name, detect_cones_fitness_detection, verbose
+        ideal_cone_model_name, detect_cones_fitness_detection, verbose, ideal_cone_model
     );
 
     if (! cone_cloud->empty())

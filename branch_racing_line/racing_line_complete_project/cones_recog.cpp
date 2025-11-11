@@ -204,7 +204,7 @@ bool processClusterForConeDetection(const pcl::PointCloud<pcl::PointXYZ>::Ptr &c
 std::vector<int> detectCones(
     const pcl::PointCloud<pcl::PointXYZ>::Ptr &cloud,
     const std::vector<pcl::PointIndices> &cluster_indices,
-    const std::string &cone_model_ply,
+    const pcl::PointCloud<pcl::PointXYZ>::Ptr &cone_model,
     int icp_max_iter = 40,
     double fitness_threshold = 0.01,
     double height_threshold = -0.01, // <-- adjust as needed (meters)
@@ -215,15 +215,6 @@ std::vector<int> detectCones(
     bool verbose = false)
 {
     // TODO da spostare in main parte che legge il file
-
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cone_model(new pcl::PointCloud<pcl::PointXYZ>);
-    if (pcl::io::loadPLYFile<pcl::PointXYZ>(cone_model_ply, *cone_model) == -1)
-    {
-        PCL_ERROR("Couldn't read the cone model PLY file.\n");
-        return {};
-    }
-
-    std::cout << "Loaded reference cone model with " << cone_model->size() << " points\n";
 
     // Center the model around its centroid
     Eigen::Vector4f model_centroid;

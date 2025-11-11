@@ -80,7 +80,7 @@ get_cones_cloud(
     const float cut_bottom,
     const float cut_top,
     const std::string& cone_model_name,
-    double detect_cones_fitness_detection, bool verbose, bool visualize_cone_detection
+    double detect_cones_fitness_detection, bool verbose, const pcl::PointCloud<pcl::PointXYZ>::Ptr &ideal_cone_model, bool visualize_cone_detection
 )
 {
     //constexpr double initial_sor_std_dev_thr = 1.1;
@@ -114,7 +114,7 @@ get_cones_cloud(
     auto cone_clusters = detectCones(
         work_cloud,
         eucl_cluster_indxes,
-        cone_model_name,
+        ideal_cone_model,
         40,
         /*0.005*/ detect_cones_fitness_detection,
         -0.7,
