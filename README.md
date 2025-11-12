@@ -9,7 +9,7 @@ L4: Extract track edges or racing line
 L5: Perform odometry using image or LiDAR data
 BONUS: Implement interactive visualization for debugging
 
-## In depth
+## In depth
 
 ### Prior work 
 
