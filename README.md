@@ -1,13 +1,19 @@
-# Report of the Recruiting Challenge 
+# Project Report
 
 ## Levels 
 
 L1: Load, display, and preprocess LiDAR data
+
 L2: Detect cones
+
 L3: Classify objects (cones or obstacles) in the scene
+
 L4: Extract track edges or racing line
+
 L5: Perform odometry using image or LiDAR data
+
 BONUS: Implement interactive visualization for debugging
+
 
 ## In depth
 
