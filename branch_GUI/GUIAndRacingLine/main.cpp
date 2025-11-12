@@ -1,7 +1,12 @@
-#include <iostream>
+#include "pclviewer.h"
+#include <QApplication>
+#include <QMainWindow>
 
-int main()
+int main (int argc, char *argv[])
 {
-    std::cout << "Hello, World!" << std::endl;
-    return 0;
+  QApplication a (argc, argv);
+  PCLViewer w;
+  w.show ();
+
+  return a.exec ();
 }
