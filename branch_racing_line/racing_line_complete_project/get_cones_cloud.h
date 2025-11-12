@@ -15,8 +15,7 @@ get_cones_cloud(
     pcl::PointCloud<pcl::PointXYZ>::Ptr src_cloud,
     double initial_sor_std_dev_thr,
     float cut_bottom,
-    float cut_top,
-    const std::string& cone_model_name, double detect_cones_fitness_detection, bool verbose, const pcl::PointCloud<pcl::
+    float cut_top, double detect_cones_fitness_detection, bool verbose, const pcl::PointCloud<pcl::
     PointXYZ>::Ptr &ideal_cone_model, bool visualize_cone_detection = false
 );
 

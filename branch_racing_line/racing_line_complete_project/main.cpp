@@ -51,7 +51,7 @@ main()
     pcl::PointCloud<pcl::PointXYZ>::Ptr original_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr ideal_cone_model(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr reference_cloud(new pcl::PointCloud<pcl::PointXYZ>);
-    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr working_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr obst_cloud(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PointCloud<pcl::PointXYZ>::Ptr racing_line(new pcl::PointCloud<pcl::PointXYZ>);
     pcl::PCDReader reader;
@@ -70,14 +70,14 @@ main()
                                  transl_on_y_axis
                              ));
 
-    pcl::copyPointCloud(*original_cloud, *cloud);
+    pcl::copyPointCloud(*original_cloud, *working_cloud);
 
     auto [centers_of_mass, cone_cloud] = get_cones_cloud(
-        cloud,
+        working_cloud,
         initial_sor_std_dev_thr,
         cone_detection_cut_bottom,
         cone_detection_cut_top,
-        ideal_cone_model_name, detect_cones_fitness_detection, verbose, ideal_cone_model
+        detect_cones_fitness_detection, verbose, ideal_cone_model
     );
 
     if (! cone_cloud->empty())
@@ -95,7 +95,7 @@ main()
             src_left,
             src_right);
 
-        obst_cloud = get_obstacle_cloud(cloud, cone_cloud);
+        obst_cloud = get_obstacle_cloud(working_cloud, cone_cloud);
     }
 
 
