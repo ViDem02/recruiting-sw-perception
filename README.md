@@ -54,6 +54,33 @@ Documentation and task specification:
 - Produces an estimated displacement/trajectory; plotting provided for quick inspection
 
 
+## Build and run
+
+### GUIAndRacingLine
+
+This process has been tested for MacOS 15, M3 processor. 
+
+```
+cd GUIAndRacingLine
+cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -S . -B cmake-build-debug  
+cd cmake-build-debug  
+cmake --build .
+./pcl_viewer
+```
+
+### OdometryWithProcessing
+
+This process has been tested for MacOS 15, M3 processor. 
+
+```
+cd OdometryWithProcessing
+cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -S . -B cmake-build-debug  
+cd cmake-build-debug  
+cmake --build .
+./sample_consensus first.pcd second.pcd
+```
+
+
 ## Repository guide (selected files)
 - `branch_deliverable/GUIAndRacingLine/logic/get_cones_cloud.cpp` — cone segmentation
 - `branch_deliverable/GUIAndRacingLine/logic/distinguish_left_right.cpp` — left/right split

@@ -14,6 +14,8 @@ This C++ script performs point cloud odometry using the Iterative Closest Point 
 
 ### Build
 
+This process has been tested for MacOS 15, M3 processor. 
+
 For the building of this project using CMake is the easiest root. 
 
 ```
