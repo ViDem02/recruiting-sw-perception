@@ -1,6 +1,7 @@
 .idea
 .idea/
 .venv/
+.qtcreator
 
 # C++ project .gitignore
 # Tailored for CMake, common IDEs (CLion, VSCode, Visual Studio, Xcode), package managers (conan, vcpkg),

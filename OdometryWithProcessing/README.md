@@ -16,6 +16,13 @@ This C++ script performs point cloud odometry using the Iterative Closest Point 
 
 For the building of this project using CMake is the easiest root. 
 
+```
+cmake -DCMAKE_BUILD_TYPE=Debug -G Ninja -S . -B cmake-build-debug  
+cd cmake-build-debug  
+cmake --build .
+./sample_consensus first.pcd second.pcd
+```
+
 ### Run
 
 ```sh
